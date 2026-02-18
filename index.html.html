@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Трекер привычек</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #1a1d29;
+  --bg2: #20242e;
+  --surface: #252936;
+  --surface-hover: #2a2f3d;
+  --border: #2f3545;
+  --text: #e4e6eb;
+  --text-muted: #8b90a0;
+  --accent: #ff9a76;
+  --accent-dim: #ff9a7630;
+  --green: #6fdc8c;
+  --green-dim: #6fdc8c20;
+  --shadow: rgba(0,0,0,.2);
+  --shadow-lg: rgba(0,0,0,.35);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  padding: 20px;
+  line-height: 1.6;
+}
+
+/* grain texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 100;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+}
+
+.container { max-width: 800px; margin: 0 auto; position: relative; z-index: 1; }
+
+/* ── HEADER ── */
+.header { text-align: center; margin-bottom: 40px; }
+
+.logo {
+  font-size: 15px; letter-spacing: .3em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 12px; font-weight: 400;
+}
+
+.title {
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 700; letter-spacing: -.02em; margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 15px; color: var(--text-muted); font-weight: 300;
+}
+
+/* ── OVERALL PROGRESS ── */
+.overall {
+  background: var(--surface);
+  border-radius: 20px; padding: 28px 32px; margin-bottom: 32px;
+  box-shadow: 0 8px 32px var(--shadow);
+}
+
+.overall-label {
+  font-size: 13px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 12px; font-weight: 500;
+}
+
+.overall-value {
+  font-size: 56px; font-weight: 700; letter-spacing: -.03em;
+  background: linear-gradient(135deg, var(--accent), var(--green));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; line-height: 1;
+}
+
+.overall-bar {
+  height: 10px; background: var(--bg2); border-radius: 10px; overflow: hidden; margin-top: 20px;
+}
+
+.overall-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 10px; transition: width .6s cubic-bezier(.16,1,.3,1);
+}
+
+/* ── ADD HABIT ── */
+.add-habit {
+  display: flex; gap: 12px; margin-bottom: 32px;
+}
+
+.add-input {
+  flex: 1; background: var(--surface); border: 2px solid var(--border);
+  border-radius: 14px; padding: 14px 18px; font-family: inherit; font-size: 15px;
+  color: var(--text); outline: none; transition: border-color .2s, background .2s;
+}
+.add-input::placeholder { color: var(--text-muted); }
+.add-input:focus { border-color: var(--accent); background: var(--surface-hover); }
+
+.add-btn {
+  padding: 14px 28px; background: linear-gradient(135deg, var(--accent), #ff7a5c);
+  border: none; border-radius: 14px; color: #fff; font-family: inherit;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: transform .2s, box-shadow .2s;
+  box-shadow: 0 4px 20px rgba(255,154,118,.3);
+}
+.add-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(255,154,118,.4); }
+.add-btn:active { transform: translateY(0); }
+
+/* ── HABITS LIST ── */
+.habits { display: flex; flex-direction: column; gap: 16px; }
+
+.habit {
+  background: var(--surface); border-radius: 20px; padding: 24px 28px;
+  box-shadow: 0 4px 20px var(--shadow);
+  transition: transform .2s, box-shadow .2s;
+}
+.habit:hover { transform: translateY(-2px); box-shadow: 0 6px 28px var(--shadow-lg); }
+
+.habit-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;
+}
+
+.habit-name {
+  font-size: 18px; font-weight: 600; letter-spacing: -.01em;
+}
+
+.habit-actions {
+  display: flex; gap: 8px;
+}
+
+.habit-btn {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: var(--bg2); border: none; color: var(--text-muted);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; transition: background .2s, color .2s, transform .15s;
+}
+.habit-btn:hover { background: var(--border); color: var(--text); }
+.habit-btn:active { transform: scale(.92); }
+
+.habit-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-bottom: 16px;
+}
+
+.day {
+  aspect-ratio: 1;
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s;
+  position: relative; overflow: hidden;
+}
+
+.day-label {
+  font-size: 11px; font-weight: 500; color: var(--text-muted);
+  letter-spacing: .04em; margin-bottom: 2px;
+}
+
+.day-check {
+  font-size: 18px; opacity: 0; transition: opacity .2s, transform .3s;
+  transform: scale(.5);
+}
+
+.day:hover { border-color: var(--accent); background: var(--surface-hover); }
+
+.day.checked {
+  background: var(--green-dim);
+  border-color: var(--green);
+}
+.day.checked .day-check {
+  opacity: 1; transform: scale(1);
+  animation: pop .4s cubic-bezier(.68,-0.55,.27,1.55);
+}
+
+@keyframes pop {
+  0% { transform: scale(.5); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* confetti on click */
+.day::before {
+  content: '✨';
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  font-size: 20px; opacity: 0;
+  pointer-events: none;
+}
+.day.checked::before {
+  animation: confetti .6s ease-out;
+}
+@keyframes confetti {
+  0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+  50% { transform: translate(-50%, -50%) scale(1.5); opacity: .8; }
+  100% { transform: translate(-50%, -70%) scale(.5); opacity: 0; }
+}
+
+.habit-progress {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+}
+
+.progress-bar {
+  flex: 1; height: 8px; background: var(--bg2); border-radius: 8px; overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 8px; transition: width .5s cubic-bezier(.16,1,.3,1);
+}
+
+.progress-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px; font-weight: 500; color: var(--text-muted);
+  min-width: 45px; text-align: right;
+}
+
+/* ── EMPTY STATE ── */
+.empty {
+  text-align: center; padding: 80px 20px; color: var(--text-muted);
+}
+.empty-icon { font-size: 64px; margin-bottom: 16px; opacity: .3; }
+.empty-text { font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+.empty-hint { font-size: 14px; opacity: .7; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 600px) {
+  .habit-grid { gap: 8px; }
+  .day { border-radius: 10px; }
+  .day-label { font-size: 10px; }
+  .day-check { font-size: 16px; }
+  .habit { padding: 20px 20px; }
+  .overall { padding: 24px 24px; }
+  .add-habit { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">Weekly Habit Tracker</div>
+    <h1 class="title">Мои привычки</h1>
+    <p class="subtitle">Отслеживайте прогресс каждый день</p>
+  </header>
+
+  <!-- Overall Progress -->
+  <div class="overall">
+    <div class="overall-label">Общий прогресс за неделю</div>
+    <div class="overall-value" id="overallPercent">0%</div>
+    <div class="overall-bar">
+      <div class="overall-fill" id="overallFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Add Habit -->
+  <div class="add-habit">
+    <input type="text" class="add-input" id="habitInput" placeholder="Новая привычка..." maxlength="50">
+    <button class="add-btn" onclick="addHabit()">+ Добавить</button>
+  </div>
+
+  <!-- Habits List -->
+  <div class="habits" id="habitsList"></div>
+
+  <!-- Empty State -->
+  <div class="empty" id="emptyState" style="display:none;">
+    <div class="empty-icon">🎯</div>
+    <div class="empty-text">Добавьте свою первую привычку</div>
+    <div class="empty-hint">Начните отслеживать полезные действия каждый день</div>
+  </div>
+</div>
+
+<script>
+const DAYS = ['ПН','ВТ','СР','ЧТ','ПТ','СБ','ВС'];
+
+let habits = JSON.parse(localStorage.getItem('habits')) || [];
+
+function saveHabits() {
+  localStorage.setItem('habits', JSON.stringify(habits));
+}
+
+function addHabit() {
+  const input = document.getElementById('habitInput');
+  const name = input.value.trim();
+  if (!name) return;
+
+  habits.push({
+    id: Date.now(),
+    name: name,
+    days: [false, false, false, false, false, false, false]
+  });
+
+  input.value = '';
+  saveHabits();
+  render();
+}
+
+function toggleDay(habitId, dayIndex) {
+  const habit = habits.find(h => h.id === habitId);
+  if (habit) {
+    habit.days[dayIndex] = !habit.days[dayIndex];
+    saveHabits();
+    render();
+  }
+}
+
+function deleteHabit(habitId) {
+  if (confirm('Удалить эту привычку?')) {
+    habits = habits.filter(h => h.id !== habitId);
+    saveHabits();
+    render();
+  }
+}
+
+function resetHabit(habitId) {
+  const habit = habits.find(h => h.id === habitId);
+  if (habit) {
+    habit.days = [false, false, false, false, false, false, false];
+    saveHabits();
+    render();
+  }
+}
+
+function calculateProgress(days) {
+  const completed = days.filter(d => d).length;
+  return Math.round((completed / 7) * 100);
+}
+
+function calculateOverallProgress() {
+  if (habits.length === 0) return 0;
+  const totalDays = habits.length * 7;
+  const completedDays = habits.reduce((sum, h) => sum + h.days.filter(d => d).length, 0);
+  return Math.round((completedDays / totalDays) * 100);
+}
+
+function render() {
+  const list = document.getElementById('habitsList');
+  const empty = document.getElementById('emptyState');
+
+  if (habits.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    list.innerHTML = habits.map(habit => {
+      const progress = calculateProgress(habit.days);
+      return `
+        <div class="habit">
+          <div class="habit-header">
+            <div class="habit-name">${habit.name}</div>
+            <div class="habit-actions">
+              <button class="habit-btn" onclick="resetHabit(${habit.id})" title="Сбросить">↻</button>
+              <button class="habit-btn" onclick="deleteHabit(${habit.id})" title="Удалить">×</button>
+            </div>
+          </div>
+          <div class="habit-grid">
+            ${DAYS.map((day, i) => `
+              <div class="day ${habit.days[i] ? 'checked' : ''}" onclick="toggleDay(${habit.id}, ${i})">
+                <div class="day-label">${day}</div>
+                <div class="day-check">✓</div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="habit-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${progress}%"></div>
+            </div>
+            <div class="progress-text">${progress}%</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Update overall progress
+  const overall = calculateOverallProgress();
+  document.getElementById('overallPercent').textContent = overall + '%';
+  document.getElementById('overallFill').style.width = overall + '%';
+}
+
+// Enter key to add habit
+document.getElementById('habitInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') addHabit();
+});
+
+// Initial render
+render();
+</script>
+
+</body>
+</html>
